@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>الكلمة الممنوعة أونلاين</title>
+<style>
+:root{--bg:#fff8ec;--fg:#2b2118;--card:#fff;--ac:#e8590c;--mut:#8a7b6b;--bad:#c92a2a;--ok:#2b8a3e;--ln:#ecdcc4;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1c1712;--fg:#f5ebdc;--card:#2a231b;--ac:#ff922b;--mut:#a89986;--bad:#ff6b6b;--ok:#69db7c;--ln:#3d3327}}
+:root[data-theme="dark"]{--bg:#1c1712;--fg:#f5ebdc;--card:#2a231b;--ac:#ff922b;--mut:#a89986;--bad:#ff6b6b;--ok:#69db7c;--ln:#3d3327}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;min-height:100vh}
+main{max-width:480px;margin:0 auto;padding:20px 16px 40px}
+h1{font-size:28px;margin:8px 0 4px}h2{margin:0 0 8px;font-size:22px}
+p{color:var(--mut);line-height:1.6;margin:6px 0 14px}
+.card{background:var(--card);border:1px solid var(--ln);border-radius:16px;padding:16px;margin-bottom:14px}
+input{width:100%;font:inherit;font-size:18px;padding:12px;border-radius:12px;border:2px solid var(--ln);background:var(--bg);color:var(--fg);margin:6px 0 10px}
+input:focus{outline:none;border-color:var(--ac)}
+button{width:100%;font:inherit;font-size:18px;font-weight:700;padding:14px;border:0;border-radius:12px;background:var(--ac);color:#fff;cursor:pointer;margin-top:4px}
+button.g{background:transparent;color:var(--mut);border:1px solid var(--ln)}
+button:disabled{opacity:.5}
+.row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--ln);gap:8px}
+.row:last-child{border:0}
+.tag{font-size:13px;padding:3px 10px;border-radius:99px;font-weight:700;white-space:nowrap}
+.b{background:color-mix(in srgb,var(--bad) 18%,transparent);color:var(--bad)}
+.o{background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok)}
+.m{background:var(--ln);color:var(--mut)}
+.big{font-size:34px;font-weight:800;color:var(--ac);text-align:center;margin:10px 0}
+.pill{display:inline-block;background:var(--ln);border-radius:99px;padding:4px 12px;font-size:14px;color:var(--mut)}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0 12px}
+.av{border:2px solid var(--ln);border-radius:12px;padding:8px 2px;text-align:center;font-size:12px;cursor:pointer;background:var(--bg)}
+.av b{display:block;font-size:26px;font-weight:400}
+.av.on{border-color:var(--ac);background:color-mix(in srgb,var(--ac) 14%,transparent)}
+.seg{display:flex;gap:8px;margin:6px 0 12px}
+.seg div{flex:1;text-align:center;padding:12px;border:2px solid var(--ln);border-radius:12px;cursor:pointer;font-weight:700}
+.seg div.on{border-color:var(--ac);background:color-mix(in srgb,var(--ac) 14%,transparent)}
+.mic{background:var(--ln);color:var(--fg)}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<script>
+var AV=[["🗡️","صلاح الدين"],["⚕️","ابن سينا"],["🔭","ابن الهيثم"],["🧮","الخوارزمي"],["👑","هارون الرشيد"],["🐎","خالد بن الوليد"],["🧭","ابن بطوطة"],["🩺","الزهراوي"],["🐍","كليوباترا"],["🎩","نابليون"],["📜","أرسطو"],["🕌","فاطمة الفهرية"]];
+var app=document.getElementById("app");
+var me={name:"",av:0,role:"player",code:""};
+var room=false,S={phase:"lobby",id:0,cat:"",scores:{},strikes:{},out:[],hints:{},dbl:[],used:{},end:0,now:0,lend:0,results:[],word:"",count:0,total:0};
+var word="",answers={},myAns=0,peers=[],sig="",status="";
+
+function esc(t){var d=document.createElement("div");d.textContent=String(t==null?"":t);return d.innerHTML}
+function norm(t){return t.trim().replace(/[\u064B-\u065F\u0640]/g,"").replace(/[أإآ]/g,"ا").replace(/ة/g,"ه").replace(/ى/g,"ي").replace(/\s+/g," ").replace(/^ال/,"").toLowerCase()}
+function put(h){
+ var keep={};[].forEach.call(app.querySelectorAll("input"),function(i){if(i.id)keep[i.id]=i.value});
+ app.innerHTML=h;
+ for(var k in keep){var e=document.getElementById(k);if(e&&e.type!=="hidden")e.value=keep[k]}
+}
+function players(){return peers.filter(function(p){return p.presence&&p.presence.role==="player"})}
+function admins(){return peers.filter(function(p){return p.presence&&p.presence.role==="admin"})}
+function isOut(n){return S.out&&S.out.indexOf(n)>-1}
+function active(){return players().filter(function(p){return !isOut(p.presence.name)})}
+function who(p){var x=p.presence;return (AV[x.av]||AV[0])[0]+" "+esc(x.name)}
+
+/* ---------- join screen ---------- */
+function joinScreen(){
+ var av=AV.map(function(a,i){return '<div class="av'+(me.av===i?' on':'')+'" onclick="me.name=val(\'nm\');me.code=val(\'cd\');me.av='+i+';joinScreen()"><b>'+a[0]+'</b>'+a[1]+'</div>'}).join("");
+ put('<h1>🚫 الكلمة الممنوعة</h1><p>كل واحد يلعب من جواله. الأدمن يكتب كلمة سرية، واللاعبون يحاولون يكتبون كلمات مختلفة عنها.</p>'+
+ '<div class="card"><b>اسمك</b><input id="nm" value="'+esc(me.name)+'" placeholder="اكتب اسمك">'+
+ '<b>اختر شخصيتك التاريخية</b><div class="grid">'+av+'</div>'+
+ '<b>تلعب كـ</b><div class="seg"><div class="'+(me.role==="player"?'on':'')+'" onclick="me.name=val(\'nm\');me.code=val(\'cd\');me.role=\'player\';joinScreen()">🎮 لاعب</div><div class="'+(me.role==="admin"?'on':'')+'" onclick="me.name=val(\'nm\');me.code=val(\'cd\');me.role=\'admin\';joinScreen()">🎩 أدمن</div></div>'+
+ '<b>رمز الغرفة</b><input id="cd" value="'+esc(me.code)+'" placeholder="مثال: 1234">'+
+ '<button onclick="enter()">دخول</button><p style="margin:10px 0 0">'+esc(status)+'</p></div>')
+}
+function val(id){var e=document.getElementById(id);return e?e.value.trim():""}
+var DB="https://forbidden-word-9cb7b-default-rtdb.firebaseio.com",base="",key=Math.random().toString(36).slice(2,10),known={},seenPow={},lastV=0,busy=false;
+function api(path,method,body){
+ return fetch(DB+"/rooms/"+base+path+".json",{method:method||"GET",body:body===undefined?undefined:JSON.stringify(body)}).then(function(r){if(!r.ok)throw new Error("HTTP "+r.status);return r.json()})
+}
+function beat(){return api("/peers/"+key,"PUT",{name:me.name,av:me.av,role:me.role,t:{".sv":"timestamp"}})}
+async function enter(){
+ me.name=val("nm");me.code=val("cd");
+ if(!me.name||!me.code){status="اكتب اسمك ورمز الغرفة";joinScreen();return}
+ base=me.code.toLowerCase().replace(/[^a-z0-9]/g,"")||"0";
+ status="جاري الاتصال...";joinScreen();
+ try{
+  await beat();room=true;
+  if(me.role==="admin")bcast();
+  setInterval(function(){beat().catch(function(){})},5000);
+  setInterval(poll,1000);poll();draw();
+ }catch(e){status="تعذر الاتصال: "+(e&&e.message||"");joinScreen()}
+}
+function bcast(){
+ if(!room||me.role!=="admin")return;
+ S.total=active().length;S.now=Date.now();S.v=Date.now();
+ api("/state","PUT",S).catch(function(){})
+}
+function applyPow(n){
+ var q=players().filter(function(x){return x.presence.name===n})[0];
+ if(!q||S.used[n]||isOut(n))return;
+ var a=q.presence.av;
+ if(a===0){if(!(S.strikes[n]>0))return;S.strikes[n]--;S.used[n]=1}
+ else if(S.phase!=="play")return;
+ else if(a===2){S.hints[n]=word.trim().charAt(0);S.used[n]=1}
+ else{S.dbl.push(n);S.used[n]=1}
+ bcast();draw()
+}
+async function poll(){
+ if(busy||!room)return;busy=true;
+ try{
+  var d=(await api(""))||{},now=Date.now(),list=[],pr=d.peers||{};
+  for(var k in pr){var p=pr[k];if(!p)continue;if(!known[k]||known[k].t!==p.t)known[k]={t:p.t,seen:now};if(now-known[k].seen<20000)list.push({id:k,presence:p})}
+  var sg=JSON.stringify(list.map(function(x){return[x.id,x.presence.name,x.presence.role]})),changed=sg!==sig;
+  sig=sg;peers=list;
+  if(me.role==="admin"){
+   if(S.phase==="play"){
+    var an=(d.ans||{})[S.id]||{},c=0;answers={};
+    for(var k2 in an){if(an[k2]&&!isOut(an[k2].name)){answers[k2]={name:an[k2].name,av:an[k2].av,w:String(an[k2].w).slice(0,40)};c++}}
+    if(c!==S.count){S.count=c;changed=true}
+   }
+   var pw=d.pow||{};
+   for(var k3 in pw){var u=k3+"_"+pw[k3].id;if(!seenPow[u]){seenPow[u]=1;applyPow(pw[k3].name)}}
+   if(S.total!==active().length)changed=true;
+   if(changed){bcast();draw()}
+  }else{
+   var st=d.state;
+   if(st&&st.v!==lastV){var pp=S.phase;lastV=st.v;S=st;S.lend=now+((S.end||0)-(S.now||0));if(pp==="play"&&S.phase==="reveal")beep(660);changed=true}
+   if(changed)draw()
+  }
+ }catch(e){}
+ busy=false
+}
+
+/* ---------- admin actions ---------- */
+function startRound(){
+ var c=val("cat"),w=val("wd");
+ if(!c||!w){alert("اكتب الفئة والكلمة");return}
+ if(!active().length){alert("ما في لاعبين نشطين");return}
+ var tmv=parseInt(val("tm"),10);word=w;answers={};S.cat=c;S.id=Date.now();S.phase="play";S.count=0;S.word="";S.results=[];S.hints={};S.dbl=[];S.end=tmv>0?Date.now()+Math.min(tmv,300)*1000:0;S.lend=S.end;bcast();draw()
+}
+function doReveal(){
+ var hn=norm(word),cnt={},res=[];
+ for(var k in answers){var n=norm(answers[k].w);cnt[n]=(cnt[n]||0)+1}
+ for(var k2 in answers){
+  var a=answers[k2],n2=norm(a.w),pts,t;
+  if(n2===hn){pts=0;t="b";S.strikes[a.name]=(S.strikes[a.name]||0)+1;if(S.strikes[a.name]>=3&&S.out.indexOf(a.name)<0)S.out.push(a.name)}else if(cnt[n2]>1){pts=1;t="m"}else{pts=2;t="o"}
+  var dd=pts>0&&S.dbl.indexOf(a.name)>-1;if(dd)pts*=2;S.scores[a.name]=(S.scores[a.name]||0)+pts;
+  res.push({name:a.name,av:a.av,w:a.w,pts:pts,t:t,dd:dd,st:S.strikes[a.name]||0,out:isOut(a.name)})
+ }
+ S.results=res;S.word=word;S.phase="reveal";S.dbl=[];S.end=0;beep(660);bcast();draw()
+}
+function nextRound(){S.phase="lobby";S.results=[];S.word="";word="";bcast();draw()}
+function finish(){S.phase="final";bcast();draw()}
+function newGame(){S.used={};S.scores={};S.strikes={};S.out=[];nextRound()}
+
+/* ---------- player actions ---------- */
+async function sendAns(){
+ var w=val("ans");if(!w||isOut(me.name))return;
+ myAns=S.id;draw();
+ try{await api("/ans/"+S.id+"/"+key,"PUT",{name:me.name,av:me.av,w:w})}catch(e){myAns=0;draw();alert("ما وصلت كلمتك، حاول مرة ثانية")}
+}
+function mic(){
+ var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+ if(!SR){alert("المايك غير مدعوم في هذا المتصفح");return}
+ try{
+  var r=new SR();r.lang="ar-SA";r.interimResults=false;
+  r.onresult=function(e){var t=e.results[0][0].transcript;var i=document.getElementById("ans");if(i)i.value=t.trim()};
+  r.onerror=function(){alert("ما اشتغل المايك، تأكد من الإذن")};
+  r.start()
+ }catch(e){alert("ما اشتغل المايك")}
+}
+function micBtn(){var SR=window.SpeechRecognition||window.webkitSpeechRecognition;return SR?'<button class="g mic" onclick="mic()">🎤 قل كلمتك بالمايك</button>':''}
+
+/* ---------- render ---------- */
+function board(){
+ var names=Object.keys(S.scores).sort(function(a,b){return S.scores[b]-S.scores[a]});
+ if(!names.length)return"";
+ return '<div class="card"><b>الترتيب</b>'+names.map(function(n,i){return '<div class="row"><span>'+(i+1)+'. '+esc(n)+'</span><b>'+S.scores[n]+'</b></div>'}).join("")+'</div>'
+}
+function roster(){
+ var ps=players();
+ return '<div class="card"><b>اللاعبون ('+ps.length+')</b>'+(ps.length?ps.map(function(p){var n=p.presence.name,k=S.strikes[n]||0;return '<div class="row"><span>'+who(p)+'</span><span class="tag '+(isOut(n)?'b':'m')+'">'+(isOut(n)?'👀 متفرج':'⚠️ '+k+'/3')+'</span></div>'}).join(""):'<p style="margin:6px 0 0">بانتظار دخول اللاعبين... شاركهم رمز الغرفة <b>'+esc(me.code)+'</b></p>')+'</div>'
+}
+function draw(){
+ if(!room)return;
+ var me_=(AV[me.av]||AV[0]),h='<span class="pill">'+me_[0]+' '+esc(me.name)+' · غرفة '+esc(me.code)+'</span>';
+ if(me.role==="admin"){
+  if(S.phase==="lobby")h+='<h2>جهّز الجولة</h2>'+roster()+'<div class="card"><b>الفئة</b><input id="cat" placeholder="مثال: حيوانات"><button class="g" onclick="rndCat()">🎲 فئة عشوائية</button><b>كلمتك السرية</b><input id="wd" type="password" autocomplete="off" placeholder="مثال: أسد"><b>الوقت بالثواني (فاضي = بدون مؤقت)</b><input id="tm" value="30" inputmode="numeric"><button onclick="startRound()">ابدأ الجولة</button></div>'+board()+(Object.keys(S.scores).length?'<button class="g" onclick="finish()">إنهاء اللعبة وإعلان الفائز</button>':'');
+  else if(S.phase==="play")h+='<h2>الجولة شغالة</h2>'+(S.end?'<div class="big" id="tick"></div>':'')+'<div class="card"><p style="margin:0">الفئة: <b>'+esc(S.cat)+'</b> · كلمتك: <b>'+esc(word)+'</b></p><div class="big">'+S.count+' / '+active().length+'</div><p style="text-align:center;margin:0">أجابوا</p></div><button onclick="doReveal()">اكشف النتائج</button>';
+  else if(S.phase==="reveal")h+=resultHtml()+'<button onclick="nextRound()">جولة جديدة</button>';
+  else h+=finalHtml()+'<button onclick="newGame()">لعبة جديدة</button>';
+ }else if(isOut(me.name)){
+  h+='<h2>👀 أنت متفرج</h2><p>كلمتك طابقت كلمة الأدمن 3 مرات، فطلعت من اللعب. تقدر تتفرج بس بدون لمس.</p>';
+  if(S.phase==="play")h+='<div class="card"><p style="margin:0">الفئة: <b>'+esc(S.cat)+'</b></p><div class="big">'+S.count+' / '+S.total+'</div><p style="text-align:center;margin:0">أجابوا</p></div>'+board();
+  else if(S.phase==="reveal")h+=resultHtml();
+  else if(S.phase==="final")h+=finalHtml();
+  else h+=roster()+board();
+ }else{
+  if(!admins().length&&S.phase==="lobby")h+='<h2>بانتظار الأدمن</h2><p>ما دخل أدمن للغرفة '+esc(me.code)+' بعد.</p>'+roster()+board();
+  else if(S.phase==="lobby")h+='<h2>الأدمن يجهّز الجولة...</h2>'+powerHtml()+roster()+board();
+  else if(S.phase==="play"){
+   if(myAns===S.id)h+='<h2>وصلت كلمتك ✅</h2><p>بانتظار البقية... ('+S.count+' / '+S.total+')</p>';
+   else h+=(S.end?'<div class="big" id="tick"></div>':'')+hintHtml()+powerHtml()+'<h2>دورك!</h2><p>الفئة: <b style="font-size:22px;color:var(--ac)">'+esc(S.cat)+'</b><br>اكتب كلمة تختلف عن كلمة الأدمن وعن كلمات اللاعبين.</p><div class="card"><input id="ans" placeholder="كلمتك" autocomplete="off">'+micBtn()+'<button onclick="sendAns()">أرسل</button></div>';
+  }
+  else if(S.phase==="reveal")h+=resultHtml()+powerHtml()+'<p>بانتظار الأدمن للجولة القادمة.</p>';
+  else h+=finalHtml();
+ }
+ put(h)
+}
+function resultHtml(){
+ var rows=S.results.map(function(r){var lab=r.t==="b"?(r.out?"ممنوع! طلع 🚪":"ممنوع! ⚠️"+r.st+"/3"):r.t==="m"?"مكرر +"+r.pts+(r.dd?" ⚡":""):"مميز +"+r.pts+(r.dd?" ⚡":"");return '<div class="row"><span>'+(AV[r.av]||AV[0])[0]+' <b>'+esc(r.name)+'</b>: '+esc(r.w)+'</span><span class="tag '+r.t+'">'+lab+'</span></div>'}).join("");
+ return '<h2>النتيجة</h2><div class="card"><p style="margin:0">كلمة الأدمن في فئة '+esc(S.cat)+'</p><div class="big">'+esc(S.word)+'</div>'+rows+'</div>'+board()
+}
+function finalHtml(){
+ var names=Object.keys(S.scores).sort(function(a,b){return S.scores[b]-S.scores[a]});
+ var top=names.length?S.scores[names[0]]:0,w=names.filter(function(n){return S.scores[n]===top});
+ var ks=Object.keys(S.strikes).sort(function(a,b){return S.strikes[b]-S.strikes[a]});
+ var st=ks.length&&S.strikes[ks[0]]>0?'<p style="text-align:center">😅 أكثر واحد وقع في كلمة الأدمن: <b>'+esc(ks[0])+'</b> ('+S.strikes[ks[0]]+' مرات)</p>':'';
+ return '<h2>النهاية!</h2><div class="big">'+(w.length>1?'تعادل: ':'')+w.map(esc).join(' و ')+' 🏆</div><p style="text-align:center">👑 لقب الفائز: <b>سلطان الكلمات</b></p>'+st+board()
+}
+function beep(f){try{var C=window.AudioContext||window.webkitAudioContext,c=new C(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=f;g.gain.value=.15;o.start();o.stop(c.currentTime+.2)}catch(e){}try{navigator.vibrate&&navigator.vibrate([120,60,120])}catch(e){}}
+var CATS=["حيوانات","دول","أكل","مهن","ألوان","مدن","رياضات","فواكه","أفلام","سيارات","أدوات مطبخ","أشياء في البيت","شخصيات تاريخية","ماركات","أماكن سياحية"];
+function rndCat(){var i=document.getElementById("cat");if(i)i.value=CATS[Math.floor(Math.random()*CATS.length)]}
+function hintHtml(){var h=S.hints&&S.hints[me.name]?'<div class="card">🔭 كلمة الأدمن تبدأ بحرف: <b style="font-size:22px">'+esc(S.hints[me.name])+'</b></div>':'';return h+(S.dbl&&S.dbl.indexOf(me.name)>-1?'<p>⚡ نقاطك ×2 هالجولة</p>':'')}
+function powerHtml(){
+ if(isOut(me.name)||(S.used&&S.used[me.name]))return"";
+ var a=me.av,l;
+ if(a===0){if(!(S.strikes[me.name]>0))return"";l="🗡️ عفو: امسح إنذار واحد"}
+ else if(S.phase!=="play")return"";
+ else if(a===2)l="🔭 نظرة: أول حرف من كلمة الأدمن";
+ else l="⚡ ضاعف نقاطك هالجولة";
+ return '<button class="g" onclick="usePow()">'+l+' (مرة وحدة)</button>'
+}
+function usePow(){S.used[me.name]=1;api("/pow/"+key,"PUT",{name:me.name,id:Date.now()}).catch(function(){});draw()}
+function tick(){
+ if(S.phase!=="play"||!S.end)return;
+ var e=document.getElementById("tick"),r=Math.max(0,Math.ceil((S.lend-Date.now())/1000));
+ if(e)e.textContent="⏱️ "+r;
+ if(me.role==="admin"&&r<=0&&room)doReveal()
+}
+setInterval(tick,250);
+joinScreen();
+</script>
+</body>
+</html>
